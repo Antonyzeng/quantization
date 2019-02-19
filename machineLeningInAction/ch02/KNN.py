@@ -1,6 +1,8 @@
 from numpy import *
 import operator
 
+from os import listdir
+
 
 def createDataSet():
     group = array([[1.0, 1.1], [1.0, 1.0], [0, 0], [0, 0.1]])
@@ -90,23 +92,32 @@ def img2vector(filename):
     return returnVect
 
 # 手写数字识别系统的测试代码
-def handwritingClassTes():
+def handwritingClassTest():
     hwLabels = []
-    traningFileList = listdir("traningDigts")
+    traningFileList = listdir("trainingDigits")
     m = len(traningFileList)
     trainingMat = zeros((m,1024))
     for i in range(m):
-        fileNameStr = trainingFileList[i]
+        fileNameStr = traningFileList[i]
         fileStr = fileNameStr.split('.')[0]
         classNumStr = int(fileStr.split("_")[0])
         hwLabels.append(classNumStr)
-        hwLabels.append(classNumStr)
-        trainningMat[i,:] = img2vector('traningDigits/%s'%fileNameStr)
+        trainingMat[i,:] = img2vector('trainingDigits/%s'%fileNameStr)
     testFileList = listdir('testDigits')
     errorCount = 0.0
-    mTest = len(testFileList[i])
+    mTest = len(testFileList)
+    for i in range(mTest):
+        fileNameStr = testFileList[i]
+        fileStr = fileNameStr.split(".")[0]
+        classNumStr = int(fileStr.split("_")[0])
+        vectorUnderTest = img2vector('testDigits/%s'%fileNameStr)
+        classfierResult = classify0(vectorUnderTest,trainingMat,hwLabels,3)
+        print("the classifier came back with :%d,the real answer is:%d",(classfierResult,classNumStr))
+        if (classfierResult!=classNumStr):
+            errorCount += 1.0
 
-
+    print("\nthe total number of errors is:%d"%errorCount)
+    print("\nthe total error rate is :%f"%(errorCount/float(mTest)))
 
 
 

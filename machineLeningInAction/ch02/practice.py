@@ -28,7 +28,7 @@ normMat,ranges,minVals = KNN.autoNorm(datingDataMat)
 # KNN.classifyPerson()
 
 
-
+KNN.handwritingClassTest()
 
 
 
