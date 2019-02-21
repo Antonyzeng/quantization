@@ -1,6 +1,7 @@
 from math import log
 import operator
-
+import pickle
+import numpy as np
 #计算给定数据集的香农熵（信息熵）
 def calcShannonEnt(dataSet):
     numEntrues = len(dataSet)
@@ -110,13 +111,26 @@ def majorityCnt(classList):
 def createTree(dataSet,labels):
     classList = [example[-1] for example in dataSet]
     if classList.count(classList[0]) == len(classList):
-        return classList[0]
-    if len(dataSet[0])==1:
+        return classList[0]#stop splitting when all of the classes are equal
+    if len(dataSet[0]) == 1: #stop splitting when there are no more features in dataSet
         return majorityCnt(classList)
     bestFeat = chooseBestFeatureToSplit(dataSet)
     bestFeatLabel = labels[bestFeat]
     myTree = {bestFeatLabel:{}}
-    del(labels[bestFeat])
+    subLabels = labels[:]
+    del (subLabels[bestFeat])
+    # del(labels[bestFeat])
+    featValues = [example[bestFeat] for example in dataSet]
+    uniqueVals = set(featValues)
+    for value in uniqueVals:
+        subLabels = subLabels[:]       #copy all of labels, so trees don't mess up existing labels
+        myTree[bestFeatLabel][value] = createTree(splitDataSet(dataSet, bestFeat, value),subLabels)
+    return myTree
+
+ #    书本存在漏洞
+ # del(labels[bestFeat])    # del 会直接修改原数据  造成 ‘no surfacing‘ is not in list 的错误
+    subLabels = labels[:]
+    del (subLabels[bestFeat])
     featValues = [example[bestFeat] for example in dataSet]
     uniqueVals = set(featValues)
     for value in uniqueVals:
@@ -159,5 +173,40 @@ def createTree(dataSet,labels):
 #         myTree[bestFeatLabel][value] = createTree(splitDataset(dataSet, bestFeat, value), sublabels)
 #         # 递归对每个分支建立子树。使用到了之前的splitdataset划分子树函数
 #     return myTree
+
+def classify(input_tree, feat_labels, test_vec):
+    """使用决策树分类测试数据"""
+    first_str = list(input_tree.keys())[0]
+    second_dict = input_tree[first_str]
+    # 使用index方法查找当前列表中第一个匹配firstStr变量的元素
+    feat_index = feat_labels.index(first_str)
+    # 遍历整棵树
+    for key in second_dict.keys():
+        # 如果测试数据的属性值等于Key的值
+        if test_vec[feat_index] == key:
+            # 判断是否为字典类型，如果是字典类型，则说明不是叶子节点，得需要递归
+            # 这里判断得出类别，就是寻找是否是字典类型，如果是字典类型，则不是叶子节点，如果不是字典类型，则说明是叶子结点
+            if type(second_dict[key]).__name__ == 'dict':
+                class_label = classify(second_dict[key], feat_labels, test_vec)
+            else:
+                class_label = second_dict[key]
+    return class_label
+
+# 与书本比较  w+改为wb+,r+改为rb+
+# 使用pickle模块存储决策树
+def storeTree(inputTree,filename):
+    np.save(filename,inputTree)
+    # fw = open(filename,'wb+')
+    # pickle.dump(inputTree,fw)
+    # fw.close()
+
+
+def grabTree(filename):
+    reload_myTree = np.load(filename).item()
+    return reload_myTree
+    # fr = open(filename,'rb')
+    # return pickle.load(fr)
+
+
 
 
