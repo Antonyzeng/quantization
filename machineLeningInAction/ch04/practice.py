@@ -41,3 +41,7 @@ emailText = open('email/ham/6.txt').read()
 listOfTokens = regEx.split(emailText)
 
 
+
+bayes.spamTest()
+
+

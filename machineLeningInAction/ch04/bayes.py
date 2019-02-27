@@ -13,16 +13,24 @@ def loadDataSet():
 def createVocabList(dataSet):
     vocabSet = set([])  #create empty set
     for document in dataSet:
+        # 取并集
         vocabSet = vocabSet | set(document) #union of the two sets
     return list(vocabSet)
 
 
 def setOfWords2Vec(vocabList, inputSet):
-    returnVec = [0]*len(vocabList)
+    # 创建一个其中所含元素都为0的向量
+    returnVec = [0] * len(vocabList)
+    # 遍历每个词条
     for word in inputSet:
         if word in vocabList:
+            # 如果词条存在于词汇表中，则置1
+            # index返回word出现在vocabList中的索引
+            # 若这里改为+=则就是基于词袋的模型，遇到一个单词会增加单词向量中德对应值
             returnVec[vocabList.index(word)] = 1
-        else: print("the word: %s is not in my Vocabulary!" % word)
+        else:
+            print("the word: %s is not in my Vocabulary" % word)
+    # 返回文档向量
     return returnVec
 
 
@@ -127,56 +135,117 @@ def testParse(bigString):
     listOfTokens = re.split(r'\W*',bigString)
     return [tok.lower for tok in listOfTokens if len(tok)>2]
 
+
 def spamTest():
-    #新建三个列表
-    docList=[];classList=[];fullTest=[]
-    #i 由1到26
-    for i in range(1,26):
-        #打开并读取指定目录下的本文中的长字符串，并进行处理返回
-        wordList=testParse(open('email/spam/%d.txt' %i).read())
-        #将得到的字符串列表添加到docList
+    docList = []
+    classList = []
+    fullText = []
+    # 遍历25个txt文件
+    for i in range(1, 26):
+        # 读取每个垃圾邮件，并以字符串转换成字符串列表
+        wordList = testParse(open('email/spam/%d.txt' % i, 'r').read())
         docList.append(wordList)
-        #将字符串列表中的元素添加到fullTest
-        fullTest.extend(wordList)
-        #类列表添加标签1
+        fullText.append(wordList)
+        # 标记垃圾邮件，1表示垃圾文件
         classList.append(1)
-        #打开并取得另外一个类别为0的文件，然后进行处理
-        wordList=testParse(open('email/ham/&d.txt' %i).read())
+        # 读取每个非垃圾邮件，并以字符串转换成字符串列表
+        wordList = testParse(open('email/ham/%d.txt' % i, 'r',encoding='ISO-8859-1').read())
         docList.append(wordList)
-        fullTest.extend(wordList)
+        fullText.append(wordList)
+        # 标记非垃圾邮件，0表示非垃圾文件
         classList.append(0)
-    #将所有邮件中出现的字符串构建成字符串列表
-    vocabList=createVocabList(docList)
-    #构建一个大小为50的整数列表和一个空列表
-    trainingSet=range(50);testSet=[]
-    #随机选取1~50中的10个数，作为索引，构建测试集
+    # 创建词汇表，不重复
+    vocabList = createVocabList(docList)
+    # 创建存储训练集的索引值的列表和测试集的索引值的列表
+    trainingSet = list(range(50))
+    testSet = []
+    # 从50个邮件中，随机挑选出40个作为训练集，10个作为测试集
     for i in range(10):
-        #随机选取1~50中的一个整型数
-        randIndex=int(random.uniform(0,len(trainingSet)))
-        #将选出的数的列表索引值添加到testSet列表中
+        # 随机选取索引值,随机生成一个实数
+        randIndex = int(random.uniform(0, len(trainingSet)))
+        # 添加测试集的索引值
         testSet.append(trainingSet[randIndex])
-        #从整数列表中删除选出的数，防止下次再次选出
-        #同时将剩下的作为训练集
+        # 在训练集列表中删除添加到测试集的索引值
         del(trainingSet[randIndex])
-    #新建两个列表
-    trainMat=[];trainClasses=[]
-    #遍历训练集中的吗每个字符串列表
+    # 创建训练集矩阵和训练集类别标签向量
+    trainMat = []
+    trainClasses = []
+    # 遍历训练集
     for docIndex in trainingSet:
-        #将字符串列表转为词条向量，然后添加到训练矩阵中
-        trainMat.append(setOfWords2Vec(vocabList,fullTest[docIndex]))
-        #将该邮件的类标签存入训练类标签列表中
+        # 将生成的词集模型添加到训练集矩阵中
+        trainMat.append(setOfWords2Vec(vocabList, docList[docIndex]))
+        # 将类别添加到训练集类别标签向量中
         trainClasses.append(classList[docIndex])
-    #计算贝叶斯函数需要的概率值并返回
-    p0V,p1V,pSpam=trainNB0(array(trainMat),array(trainClasses))
-    errorCount=0
-    #遍历测试集中的字符串列表
+    # 训练朴素贝叶斯模型
+    p0V, p1V, pSpam = trainNB0(array(trainMat), array(trainClasses))
+    # 错误分类计数
+    errorCount = 0
+    # 遍历测试集
     for docIndex in testSet:
-        #同样将测试集中的字符串列表转为词条向量
-        wordVector=setOfWords2Vec(vocabList,docList[docIndex])
-        #对测试集中字符串向量进行预测分类，分类结果不等于实际结果
-        if classifyNB(array(wordVector),p0V,p1V,pSpam)!=classList[docIndex]:
-            errorCount+=1
-        print('the error rate is:',float(errorCount)/len(testSet))
+        # 测试集的词集模型
+        wordVector = setOfWords2Vec(vocabList, docList[docIndex])
+        # 如果分类错误
+        if classifyNB(array(wordVector), p0V, p1V, pSpam) != classList[docIndex]:
+            # 错误计数器加1
+            errorCount += 1
+            print("分类错误的测试集：", docList[docIndex])
+    print("错误率：%.2f%%" % (float(errorCount) / len(testSet) * 100))
+# def spamTest():
+#     #新建三个列表
+#     docList=[];classList=[];fullTest=[]
+#     #i 由1到26
+#     for i in range(1,26):
+#         #打开并读取指定目录下的本文中的长字符串，并进行处理返回
+#         wordList=testParse(open('email/spam/%d.txt' %i).read())
+#         #将得到的字符串列表添加到docList
+#         docList.append(wordList)
+#         #将字符串列表中的元素添加到fullTest
+#         fullTest.extend(wordList)
+#         #类列表添加标签1
+#         classList.append(1)
+#         #打开并取得另外一个类别为0的文件，然后进行处理
+#
+#         print(i)
+#         wordList = testParse(open('email/ham/%d.txt' % i,encoding='ISO-8859-1').read())
+#
+#         docList.append(wordList)
+#         fullTest.extend(wordList)
+#         classList.append(0)
+#     #将所有邮件中出现的字符串构建成字符串列表
+#     vocabList=createVocabList(docList)
+#     #构建一个大小为50的整数列表和一个空列表
+#     # python3.x
+#     # range返回的是range对象，不返回数组对象
+#     trainingSet=list(range(50));testSet=[]
+#     #随机选取1~50中的10个数，作为索引，构建测试集
+#     for i in range(10):
+#         #随机选取1~50中的一个整型数
+#         randIndex=int(random.uniform(0,len(trainingSet)))
+#         #将选出的数的列表索引值添加到testSet列表中
+#         testSet.append(trainingSet[randIndex])
+#         #从整数列表中删除选出的数，防止下次再次选出
+#         #同时将剩下的作为训练集
+#
+#         del (trainingSet[randIndex])
+#     #新建两个列表
+#     trainMat=[];trainClasses=[]
+#     #遍历训练集中的吗每个字符串列表
+#     for docIndex in trainingSet:
+#         #将字符串列表转为词条向量，然后添加到训练矩阵中
+#         trainMat.append(setOfWords2Vec(vocabList,docList[docIndex]))
+#         #将该邮件的类标签存入训练类标签列表中
+#         trainClasses.append(classList[docIndex])
+#     #计算贝叶斯函数需要的概率值并返回
+#     p0V,p1V,pSpam=trainNB0(array(trainMat),array(trainClasses))
+#     errorCount=0
+#     #遍历测试集中的字符串列表
+#     for docIndex in testSet:
+#         #同样将测试集中的字符串列表转为词条向量
+#         wordVector=setOfWords2Vec(vocabList,docList[docIndex])
+#         #对测试集中字符串向量进行预测分类，分类结果不等于实际结果
+#         if classifyNB(array(wordVector),p0V,p1V,pSpam)!=classList[docIndex]:
+#             errorCount+=1
+#     print('the error rate is:',float(errorCount)/len(testSet))
 
 
 
