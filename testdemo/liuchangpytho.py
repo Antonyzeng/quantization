@@ -64,3 +64,23 @@ class Vector:
 
 Vector("2","2")
 print(str(Vector("2","2")))
+
+
+lax_coordinates = (33.9425, -118.408056)
+city, year, pop, chg, area = ('Tokyo', 2003, 32450, 0.66, 8014)
+traveler_ids = [('USA', '31195855'), ('BRA', 'CE342567'),
+('ESP', 'XDA205856')]
+for passport in sorted(traveler_ids):
+    print('%s/%s' % passport)
+for country, _ in traveler_ids:
+    print(country)
+
+from collections import namedtuple
+City = namedtuple('City', 'name country population coordinates')
+# City(name='Tokyo', country='JP', population=36.933, coordinates=(35.689722, 139.691667))
+
+# City = namedtuple('City', ['name','country','population','coordinates'])
+# City(name='Tokyo', country='JP', population=36.933, coordinates=(35.689722, 139.691667))
+tokyo = City('Tokyo', 'JP', 36.933, (35.689722, 139.691667))
+
+print(tokyo)
